@@ -1,21 +1,21 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { selectCart } from '../../../store/cartSlice';
+import { selectCartItemCount } from '../../../store/cartSlice';
 
 const CartNavItem: React.FC = () => {
-  const cart = useSelector(selectCart);
+  const itemCount = useSelector(selectCartItemCount);
 
   return (
     <Link 
       to="/checkout" 
       role="button"
-      aria-label={`Shopping cart with ${cart.length} items`}
+      aria-label={`Shopping cart with ${itemCount} items`}
     >
       Cart
-      {cart.length > 0 && (
+      {itemCount > 0 && (
         <span aria-hidden="true">
-          {cart.length}
+          {itemCount}
         </span>
       )}
     </Link>

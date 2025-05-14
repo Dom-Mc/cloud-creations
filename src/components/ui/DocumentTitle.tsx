@@ -1,10 +1,9 @@
 import { useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { RootState } from '../../store/store';
-
+import { selectCartItemCount } from '../../store/cartSlice';
 
 const DocumentTitle: React.FC = () => {
-  const itemCount = useSelector((state: RootState) => state.cart.cart.length);
+  const itemCount = useSelector(selectCartItemCount);
 
   useEffect(() => {
     const baseTitle = 'Cloud Creation';

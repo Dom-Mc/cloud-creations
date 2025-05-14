@@ -1,4 +1,4 @@
-import { createSlice, PayloadAction, Middleware, AnyAction } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction, Middleware, AnyAction, createSelector } from '@reduxjs/toolkit';
 import { RootState } from './store';
 import { BillingPeriod } from '../types/billing';
 import { calculateYearlyPrice } from '../utils/priceCalculations';
@@ -39,48 +39,28 @@ const cartSlice = createSlice({
   name: 'cart',
   initialState,
   reducers: {
-    addToCart: {
-      reducer: (state: CartState, action: PayloadAction<CartItem>) => {
-        if (!state.cart.some(item => item.productId === action.payload.productId)) {
-          state.cart.push(action.payload);
-        }
-      },
-      prepare: (item: CartItem) => {
-        return { payload: item };
+    addToCart: (state: CartState, action: PayloadAction<CartItem>) => {
+      if (!state.cart.some(item => item.productId === action.payload.productId)) {
+        state.cart.push(action.payload);
       }
     },
-    removeFromCart: {
-      reducer: (state: CartState, action: PayloadAction<string>) => {
-        state.cart = state.cart.filter(item => item.productId !== action.payload);
-      },
-      prepare: (productId: string) => {
-        return { payload: productId };
-      }
+    removeFromCart: (state: CartState, action: PayloadAction<string>) => {
+      state.cart = state.cart.filter(item => item.productId !== action.payload);
     },
     checkoutComplete: (state: CartState) => {
       state.cart = [];
       state.total = 0;
     },
-    updateCartItemQuantity: {
-      reducer: (state: CartState, action: PayloadAction<{ productId: string; quantity: number }>) => {
-        const item = state.cart.find(item => item.productId === action.payload.productId);
-        if (item) {
-          item.licenseQuantity = action.payload.quantity;
-        }
-      },
-      prepare: (payload: { productId: string; quantity: number }) => {
-        return { payload };
+    updateCartItemQuantity: (state: CartState, action: PayloadAction<{ productId: string; quantity: number }>) => {
+      const item = state.cart.find(item => item.productId === action.payload.productId);
+      if (item) {
+        item.licenseQuantity = action.payload.quantity;
       }
     },
-    updateCartItemBillingPeriod: {
-      reducer: (state: CartState, action: PayloadAction<{ productId: string; billingPeriod: BillingPeriod }>) => {
-        const item = state.cart.find(item => item.productId === action.payload.productId);
-        if (item) {
-          item.billingPeriod = action.payload.billingPeriod;
-        }
-      },
-      prepare: (payload: { productId: string; billingPeriod: BillingPeriod }) => {
-        return { payload };
+    updateCartItemBillingPeriod: (state: CartState, action: PayloadAction<{ productId: string; billingPeriod: BillingPeriod }>) => {
+      const item = state.cart.find(item => item.productId === action.payload.productId);
+      if (item) {
+        item.billingPeriod = action.payload.billingPeriod;
       }
     },
     updateTotal: (state: CartState, action: PayloadAction<number>) => {
@@ -88,18 +68,6 @@ const cartSlice = createSlice({
     }
   }
 });
-
-export const cartTotalMiddleware: Middleware = (store) => (next) => (action) => {
-  const result = next(action);
-  
-  if (typeof action === 'object' && action !== null && 'type' in action && typeof action.type === 'string' && action.type.startsWith('cart/') && action.type !== 'cart/updateTotal') {
-    const state = store.getState() as RootState;
-    const newTotal = calculateCartTotal(state.cart.cart, state);
-    store.dispatch(updateTotal(newTotal));
-  }
-  
-  return result;
-};
 
 export const {
   addToCart,
@@ -110,7 +78,42 @@ export const {
   updateTotal
 } = cartSlice.actions;
 
+const TOTAL_RECALCULATION_ACTIONS = [
+  cartSlice.actions.addToCart.type,
+  cartSlice.actions.removeFromCart.type,
+  cartSlice.actions.updateCartItemQuantity.type,
+  cartSlice.actions.updateCartItemBillingPeriod.type
+] as const;
+
+type CartActionType = typeof TOTAL_RECALCULATION_ACTIONS[number];
+
+export const cartTotalMiddleware: Middleware = (store) => (next) => (action: unknown) => {
+  const result = next(action);
+  
+  const cartAction = action as AnyAction;
+  if (TOTAL_RECALCULATION_ACTIONS.includes(cartAction.type as CartActionType)) {
+    const state = store.getState() as RootState;
+    const newTotal = calculateCartTotal(state.cart.cart, state);
+    store.dispatch(updateTotal(newTotal));
+  }
+  
+  return result;
+};
+
 export const selectCart = (state: RootState): CartItem[] => state.cart.cart;
 export const selectTotal = (state: RootState): number => state.cart.total;
+
+export const selectCartItemsMap = createSelector(
+  selectCart,
+  (cart) => cart.reduce((acc, item) => {
+    acc[item.productId] = item;
+    return acc;
+  }, {} as Record<string, CartItem>)
+);
+
+export const selectCartItemCount = createSelector(
+  selectCart,
+  (cart) => cart.length
+);
 
 export default cartSlice.reducer; 

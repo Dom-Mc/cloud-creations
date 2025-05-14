@@ -5,6 +5,9 @@ import { addToCart, selectCart } from '../../../../store/cartSlice';
 import { Product } from '../../../../types/product';
 import { BillingPeriod } from '../../../../types/billing';
 import { calculateYearlyPrice, formatPrice, getBillingPeriodLabel } from '../../../../utils/priceCalculations';
+import Dropdown from '../../../ui/Dropdown';
+import Input from '../../../ui/Input';
+import Button from '../../../ui/Button';
 
 interface ProductPlanProps {
   product: Product;
@@ -33,15 +36,26 @@ const ProductPlan: React.FC<ProductPlanProps> = ({ product }) => {
     ? calculateYearlyPrice(product.price, licenseQuantity)
     : product.price * licenseQuantity;
 
+  const billingOptions = [
+    {
+      value: BillingPeriod.Monthly,
+      label: getBillingPeriodLabel(product.price, BillingPeriod.Monthly)
+    },
+    {
+      value: BillingPeriod.Yearly,
+      label: getBillingPeriodLabel(product.price, BillingPeriod.Yearly)
+    }
+  ];
+
   if (isAdded || isInCart) {
     return (
       <section>
         <div>
           <p>✓ {product.name} has been added to your cart!</p>
           <div>
-            <button onClick={() => navigate('/checkout')}>
+            <Button variant="contained" onClick={() => navigate('/checkout')}>
               Go to Checkout
-            </button>
+            </Button>
           </div>
         </div>
       </section>
@@ -51,40 +65,35 @@ const ProductPlan: React.FC<ProductPlanProps> = ({ product }) => {
   return (
     <section>
       <div>
-        <label htmlFor="license-quantity">Number of Licenses:</label>
-        <input
+        <Input
           id="license-quantity"
+          label="Number of Licenses"
           type="number"
-          min="1"
-          value={licenseQuantity}
-          onChange={(e) => setLicenseQuantity(parseInt(e.target.value))}
+          min={1}
+          value={licenseQuantity.toString()}
+          onChange={(value) => setLicenseQuantity(parseInt(value) || 1)}
         />
       </div>
 
       <div>
-        <label htmlFor="billing-period">Billing Period:</label>
-        <select
+        <Dropdown
           id="billing-period"
+          label="Billing Period"
           value={billingPeriod}
-          onChange={(e) => setBillingPeriod(e.target.value as BillingPeriod)}
-        >
-          <option value={BillingPeriod.Monthly}>
-            {getBillingPeriodLabel(product.price, BillingPeriod.Monthly)}
-          </option>
-          <option value={BillingPeriod.Yearly}>
-            {getBillingPeriodLabel(product.price, BillingPeriod.Yearly)}
-          </option>
-        </select>
+          onChange={(value) => setBillingPeriod(value as BillingPeriod)}
+          options={billingOptions}
+        />
       </div>
 
       <div>
         <p>Total: ${formatPrice(price)}/{billingPeriod}</p>
-        <button 
+        <Button 
+          variant="contained"
           onClick={handleAddToCart}
-          className="primary"
+          color="primary"
         >
           Add to Cart
-        </button>
+        </Button>
       </div>
     </section>
   );
