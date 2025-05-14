@@ -8,7 +8,8 @@ import DocumentTitle from './components/ui/DocumentTitle';
 
 const AppContainer = styled.div`
   min-height: 100vh;
-  background-color: ${({ theme }) => theme.palette.background.default};
+  display: flex;
+  flex-direction: column;
 `;
 
 const App: React.FC = () => {

@@ -10,42 +10,29 @@ export const Nav = styled.nav`
   padding: 1rem 2rem;
   max-width: 1400px;
   margin: 0 auto;
+  width: 100%;
+  height: 64px;
   position: relative;
-  z-index: 100;
-  background: transparent;
+  z-index: 20;
 
-  .landing-page & {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-  }
-
-  @media (min-width: 1400px) {
-    padding: 1rem 2rem;
+  &.landing-page {
+    a {
+      color: #fff;
+    }
   }
 `;
 
 // Logo styling
 export const Logo = styled(Link)`
   text-decoration: none;
-  color: #000000;
-  font-size: 1.125rem;
-  font-weight: 500;
-  transition: all 0.2s ease;
-
-  .landing-page & {
-    color: #ffffff;
-
-    &:hover {
-      opacity: 0.7;
-      transform: scale(1.05);
-    }
-  }
+  color: #000;
+  font-size: 1.25rem;
+  font-weight: 600;
+  transition: opacity 0.2s ease;
+  z-index: 21;
 
   &:hover {
-    opacity: 0.7;
-    transform: scale(1.05);
+    opacity: 0.8;
   }
 `;
 
@@ -54,6 +41,7 @@ export const RightSection = styled.div`
   display: flex;
   align-items: center;
   gap: 2rem;
+  z-index: 21;
 `;
 
 // Navigation links container
@@ -63,26 +51,18 @@ export const NavLinks = styled.div`
   align-items: center;
 
   a {
-    color: #000000;
     text-decoration: none;
-    font-size: 0.9375rem;
-    transition: all 0.2s ease;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: opacity 0.2s ease;
     display: flex;
     align-items: center;
     gap: 0.5rem;
-
-    .landing-page & {
-      color: rgba(255, 255, 255, 0.8);
-
-      &:hover {
-        color: #ffffff;
-        transform: scale(1.05);
-      }
-    }
+    color: #000;
+    z-index: 21;
 
     &:hover {
-      opacity: 0.7;
-      transform: scale(1.05);
+      opacity: 0.8;
     }
   }
 `;
@@ -135,37 +115,37 @@ export const SecondaryButton = styled(Button)`
 
 // Cart link styling
 export const CartLink = styled(Link)`
-  color: #000000;
   text-decoration: none;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  transition: all 0.2s ease;
+  transition: opacity 0.2s ease;
   position: relative;
+  color: #000;
+  padding: 0.5rem;
+  border-radius: 4px;
+  z-index: 21;
+  cursor: pointer;
 
   .landing-page & {
-    color: rgba(255, 255, 255, 0.8);
-
-    &:hover {
-      color: #ffffff;
-      transform: scale(1.05);
-    }
+    color: #fff;
   }
 
   &:hover {
-    opacity: 0.7;
-    transform: scale(1.05);
+    opacity: 0.8;
+    background: rgba(0, 0, 0, 0.05);
   }
 
   svg {
     font-size: 1.5rem;
+    pointer-events: none;
   }
 `;
 
 // Cart badge styling
 export const CartBadge = styled.span`
   background: #3B82F6;
-  color: #ffffff;
+  color: #fff;
   border-radius: 12px;
   padding: 0.25rem 0.5rem;
   font-size: 0.75rem;
@@ -178,5 +158,5 @@ export const CartBadge = styled.span`
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
 `; 

@@ -12,7 +12,7 @@ const MainLayout: React.FC = () => {
   const isLandingPage = location.pathname === '/';
 
   return (
-    <LayoutContainer>
+    <LayoutContainer className={isLandingPage ? 'landing-page' : ''}>
       <Header $isLandingPage={isLandingPage}>
         <Navigation />
       </Header>
