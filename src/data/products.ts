@@ -1,39 +1,25 @@
-export interface Product {
-  id: string;
-  name: string;
-  price: number;
-  description: string;
-}
+import { Product } from '../types/product';
 
-export const products: Product[] = [
+export const productsStub: Product[] = [
   {
-    id: "1",
-    name: "Basic",
-    price: 9.99,
-    description: "For individuals"
+    id: 'basic',
+    name: 'Basic Plan',
+    description: 'Essential features for small teams',
+    price: 10,
+    features: ['Up to 5 users', '10GB storage', 'Basic support']
   },
   {
-    id: "2",
-    name: "Pro",
-    price: 19.99,
-    description: "For professionals"
+    id: 'pro',
+    name: 'Pro Plan',
+    description: 'Advanced features for growing teams',
+    price: 20,
+    features: ['Up to 20 users', '50GB storage', 'Priority support', 'Advanced analytics']
   },
   {
-    id: "3",
-    name: "Enterprise",
-    price: 49.99,
-    description: "For teams"
-  },
-  {
-    id: "4",
-    name: "Cloud Analytics Add-on",
-    price: 15.99,
-    description: "Advanced analytics and reporting for your cloud designs"
-  },
-  {
-    id: "5",
-    name: "Cloud Security Suite",
-    price: 29.99,
-    description: "Enhanced security and compliance tools for your cloud projects"
+    id: 'enterprise',
+    name: 'Enterprise Plan',
+    description: 'Full feature set for large organizations',
+    price: 50,
+    features: ['Unlimited users', 'Unlimited storage', '24/7 support', 'Custom integrations', 'Dedicated account manager']
   }
 ]; 

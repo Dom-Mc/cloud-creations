@@ -1,21 +1,25 @@
 import React, { useState } from 'react';
-import PaymentModal from '../components/PaymentModal';
+import { useSelector } from 'react-redux';
+import { selectProducts } from '../store/productsSlice';
+import CartCheckout from '../components/features/checkout/CartCheckout';
+import PaymentModal from '../components/features/checkout/PaymentModal';
 
 const CheckoutPage: React.FC = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const products = useSelector(selectProducts);
 
   return (
-    <div>
-      <h1>Checkout</h1>
-      <div>Cart items will go here</div>
-      <button onClick={() => setIsModalOpen(true)}>
-        Proceed to Payment
-      </button>
-      <PaymentModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+    <main>
+      <CartCheckout 
+        products={products}
+        onOpenPaymentModal={() => setIsPaymentModalOpen(true)} 
       />
-    </div>
+      <PaymentModal
+        products={products}
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+      />
+    </main>
   );
 };
 

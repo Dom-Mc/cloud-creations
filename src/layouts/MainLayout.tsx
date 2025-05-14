@@ -1,16 +1,11 @@
 import React from 'react';
-import { Link, Outlet } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
+import Navigation from '../components/ui/navigation/Navigation';
 
 const MainLayout: React.FC = () => {
   return (
     <div>
-      <nav>
-        <ul>
-          <li><Link to="/">Home</Link></li>
-          <li><Link to="/products">Products</Link></li>
-          <li><Link to="/checkout">Checkout</Link></li>
-        </ul>
-      </nav>
+      <Navigation />
       <main>
         <Outlet />
       </main>
