@@ -80,6 +80,14 @@ export const theme = createTheme({
             borderColor: '#000000',
             backgroundColor: 'rgba(0, 0, 0, 0.05)',
           },
+          '&.MuiButton-outlinedError': {
+            borderColor: '#dc3545',
+            color: '#dc3545',
+            '&:hover': {
+              borderColor: '#c82333',
+              backgroundColor: 'rgba(220, 53, 69, 0.05)',
+            },
+          },
         },
       },
     },

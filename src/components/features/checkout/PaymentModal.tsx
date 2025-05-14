@@ -4,6 +4,13 @@ import { useNavigate } from 'react-router-dom';
 import { selectCartItems, selectCartTotal, clearCart } from '../../../store/cartSlice';
 import { formatPrice, calculateTax } from '../../../utils/priceCalculations';
 import { Product } from '../../../types/product';
+import { PaymentFormData } from '../../../types/payment';
+import {
+  validatePaymentForm,
+  formatCardNumber,
+  formatExpirationDate,
+  ValidationErrors
+} from '../../../utils/paymentValidation';
 import Modal from '../../ui/Modal';
 import Button from '../../ui/Button';
 import Input from '../../ui/Input';
@@ -22,12 +29,6 @@ interface PaymentModalProps {
   onClose: () => void;
 }
 
-interface PaymentFormData {
-  cardNumber: string;
-  expirationDate: string;
-  cvv: string;
-}
-
 const PaymentModal: React.FC<PaymentModalProps> = ({ products, isOpen, onClose }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -39,7 +40,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ products, isOpen, onClose }
     expirationDate: '',
     cvv: ''
   });
-  const [errors, setErrors] = useState<Partial<PaymentFormData>>({});
+  const [errors, setErrors] = useState<ValidationErrors>({});
   const [isProcessing, setIsProcessing] = useState(false);
   const [receiptDetails, setReceiptDetails] = useState<{ 
     id: string; 
@@ -59,39 +60,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ products, isOpen, onClose }
 
   const tax = calculateTax(total);
   const finalTotal = total + tax;
-
-  const validateForm = (): boolean => {
-    const newErrors: Partial<PaymentFormData> = {};
-    
-    if (!formData.cardNumber.replace(/\s/g, '').match(/^\d{16}$/)) {
-      newErrors.cardNumber = 'Please enter a valid 16-digit card number';
-    }
-    
-    if (!formData.expirationDate.match(/^(0[1-9]|1[0-2])\/([0-9]{2})$/)) {
-      newErrors.expirationDate = 'Please enter a valid date (MM/YY)';
-    }
-    
-    if (!formData.cvv.match(/^\d{3,4}$/)) {
-      newErrors.cvv = 'Please enter a valid CVV';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const formatCardNumber = (value: string): string => {
-    const digits = value.replace(/\D/g, '');
-    const groups = digits.match(/.{1,4}/g) || [];
-    return groups.join(' ').substr(0, 19);
-  };
-
-  const formatExpirationDate = (value: string): string => {
-    const digits = value.replace(/\D/g, '');
-    if (digits.length >= 2) {
-      return `${digits.slice(0, 2)}/${digits.slice(2, 4)}`;
-    }
-    return digits;
-  };
 
   const handleInputChange = (field: keyof PaymentFormData, value: string) => {
     let formattedValue = value;
@@ -119,7 +87,9 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ products, isOpen, onClose }
   };
 
   const handlePayment = async () => {
-    if (!validateForm()) {
+    const validationErrors = validatePaymentForm(formData);
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
       return;
     }
 
@@ -305,12 +275,12 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ products, isOpen, onClose }
 
   return (
     <Modal
-      open={isOpen}
+      isOpen={isOpen}
       onClose={handleClose}
       title={isSuccess ? "Order Confirmation" : "Complete Payment"}
       actions={!isSuccess && cart.length > 0 ? (
         <>
-          <Button onClick={handleClose} variant="outlined">Cancel</Button>
+          <Button onClick={handleClose} variant="contained" color="error">Cancel</Button>
           <Button 
             onClick={handlePayment} 
             variant="contained" 

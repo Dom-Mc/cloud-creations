@@ -18,6 +18,8 @@ export const ProductLink = styled(Link)`
 export const ProductCard = styled(Card)`
   height: 100%;
   padding: 2rem;
+  position: relative;
+  overflow: hidden;
   
   header {
     margin-bottom: 1.5rem;
@@ -47,13 +49,18 @@ export const Price = styled(Typography)`
 
 export const ProductStatus = styled.aside`
   position: absolute;
-  top: 16px;
-  right: 16px;
+  top: 20px;
+  right: -60px;
   background: #3B82F6;
   color: #ffffff;
-  padding: 4px 12px;
-  border-radius: 16px;
-  font-size: 0.875rem;
+  padding: 0.5rem 4rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  transform: rotate(45deg);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 `;
 
 export const Features = styled.div`
