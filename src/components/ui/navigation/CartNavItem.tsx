@@ -1,24 +1,20 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import { Link } from 'react-router-dom';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import { selectCartItemCount } from '../../../store/cartSlice';
+import { CartLink, CartBadge } from './styles';
 
 const CartNavItem: React.FC = () => {
   const itemCount = useSelector(selectCartItemCount);
 
   return (
-    <Link 
-      to="/checkout" 
-      role="button"
-      aria-label={`Shopping cart with ${itemCount} items`}
-    >
-      Cart
+    <CartLink to="/checkout" aria-label={`Shopping cart with ${itemCount} items`}>
+      <ShoppingCartIcon />
       {itemCount > 0 && (
-        <span aria-hidden="true">
-          {itemCount}
-        </span>
+        <CartBadge>{itemCount}</CartBadge>
       )}
-    </Link>
+    </CartLink>
   );
 };
 

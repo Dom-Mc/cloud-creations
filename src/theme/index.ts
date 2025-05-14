@@ -2,18 +2,27 @@ import { createTheme } from '@mui/material/styles';
 
 export const theme = createTheme({
   palette: {
-    mode: 'dark',
+    mode: 'light',
     primary: {
-      main: '#ffffff',
-      contrastText: '#000000',
+      main: '#000000',
+      contrastText: '#ffffff',
+    },
+    secondary: {
+      main: '#86868b',
+      contrastText: '#ffffff',
+    },
+    error: {
+      main: '#dc3545',
+      dark: '#c82333',
+      contrastText: '#ffffff',
     },
     background: {
-      default: '#000000',
-      paper: '#141414',
+      default: '#ffffff',
+      paper: '#f5f5f7',
     },
     text: {
-      primary: '#ffffff',
-      secondary: 'rgba(255, 255, 255, 0.7)',
+      primary: '#1d1d1f',
+      secondary: '#86868b',
     },
   },
   typography: {
@@ -52,17 +61,24 @@ export const theme = createTheme({
           textTransform: 'none',
         },
         contained: {
-          backgroundColor: '#ffffff',
-          color: '#000000',
+          backgroundColor: '#000000',
+          color: '#ffffff',
           '&:hover': {
-            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+            backgroundColor: '#1d1d1f',
+          },
+          '&.MuiButton-containedError': {
+            backgroundColor: '#dc3545',
+            '&:hover': {
+              backgroundColor: '#c82333',
+            },
           },
         },
         outlined: {
-          borderColor: 'rgba(255, 255, 255, 0.2)',
+          borderColor: 'rgba(0, 0, 0, 0.2)',
+          color: '#000000',
           '&:hover': {
-            borderColor: '#ffffff',
-            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            borderColor: '#000000',
+            backgroundColor: 'rgba(0, 0, 0, 0.05)',
           },
         },
       },
@@ -72,12 +88,12 @@ export const theme = createTheme({
         root: {
           '& .MuiOutlinedInput-root': {
             borderRadius: '12px',
-            backgroundColor: 'rgba(255, 255, 255, 0.06)',
+            backgroundColor: 'rgba(0, 0, 0, 0.05)',
             '&:hover': {
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              backgroundColor: 'rgba(0, 0, 0, 0.08)',
             },
             '& fieldset': {
-              borderColor: 'rgba(255, 255, 255, 0.2)',
+              borderColor: 'rgba(0, 0, 0, 0.2)',
             },
           },
         },
@@ -86,9 +102,10 @@ export const theme = createTheme({
     MuiDialog: {
       styleOverrides: {
         paper: {
-          backgroundColor: '#141414',
+          backgroundColor: '#ffffff',
           borderRadius: '20px',
           padding: '24px',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
         },
       },
     },
@@ -96,9 +113,26 @@ export const theme = createTheme({
       styleOverrides: {
         outlined: {
           borderRadius: '12px',
-          backgroundColor: 'rgba(255, 255, 255, 0.06)',
+          backgroundColor: 'rgba(0, 0, 0, 0.05)',
           '&:hover': {
-            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            backgroundColor: 'rgba(0, 0, 0, 0.08)',
+          },
+        },
+      },
+    },
+    MuiMenuItem: {
+      styleOverrides: {
+        root: {
+          fontSize: '0.875rem',
+          padding: '8px 12px',
+          '&:hover': {
+            backgroundColor: 'rgba(0, 0, 0, 0.04)',
+          },
+          '&.Mui-selected': {
+            backgroundColor: 'rgba(0, 0, 0, 0.08)',
+            '&:hover': {
+              backgroundColor: 'rgba(0, 0, 0, 0.12)',
+            },
           },
         },
       },

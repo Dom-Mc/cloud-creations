@@ -1,20 +1,20 @@
-import React from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { 
   removeFromCart, 
-  updateCartItemQuantity, 
-  updateCartItemBillingPeriod,
-  selectCart,
-  selectTotal,
-  CartItem
+  updateQuantity,
+  updateBillingPeriod,
+  selectCartItems,
+  selectCartTotal
 } from '../../../store/cartSlice';
-import { getBillingPeriodLabel, formatPrice, calculateYearlyPrice } from '../../../utils/priceCalculations';
-import { BillingPeriod } from '../../../types/billing';
+import { formatPrice } from '../../../utils/priceCalculations';
 import { Product } from '../../../types/product';
-import PriceSummary from '../../shared/pricing/PriceSummary';
-import Dropdown from '../../ui/Dropdown';
+import { CartItem } from '../../../types/cart';
+import { BillingPeriod } from '../../../types/billing';
+import { ANNUAL_DISCOUNT_PERCENTAGE } from '../../../constants/pricing';
 import Input from '../../ui/Input';
+import Select from '../../ui/Select';
 import Button from '../../ui/Button';
 import Typography from '../../ui/Typography';
 import {
@@ -31,35 +31,40 @@ interface CartCheckoutProps {
   onOpenPaymentModal: () => void;
 }
 
+const billingOptions = [
+  { value: 'month', label: 'Monthly' },
+  { value: 'year', label: `Yearly (Save ${ANNUAL_DISCOUNT_PERCENTAGE}%)` }
+];
+
 const CartCheckout: React.FC<CartCheckoutProps> = ({ products, onOpenPaymentModal }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const cart = useSelector(selectCart);
-  const total = useSelector(selectTotal);
+  const cartItems = useSelector(selectCartItems);
+  const subtotal = useSelector(selectCartTotal);
 
-  const handleRemove = (productId: string) => {
-    dispatch(removeFromCart(productId));
+  // Only navigate away if we're not in the payment flow
+  useEffect(() => {
+    const isPaymentModalOpen = document.querySelector('[role="dialog"]');
+    if (cartItems.length === 0 && !isPaymentModalOpen) {
+      navigate('/products');
+    }
+  }, [cartItems.length, navigate]);
+
+  const handleRemove = (id: string) => {
+    dispatch(removeFromCart(id));
   };
 
-  const handleQuantityChange = (productId: string, quantity: number) => {
-    dispatch(updateCartItemQuantity({ productId, quantity }));
+  const handleQuantityChange = (id: string, quantity: number) => {
+    dispatch(updateQuantity({ id, quantity }));
   };
 
-  const handleBillingPeriodChange = (productId: string, billingPeriod: BillingPeriod) => {
-    dispatch(updateCartItemBillingPeriod({ productId, billingPeriod }));
+  const handleBillingPeriodChange = (id: string, value: string) => {
+    dispatch(updateBillingPeriod({ id, billingPeriod: value as BillingPeriod }));
   };
 
-  if (cart.length === 0) {
-    return (
-      <PageContainer>
-        <ContentSection>
-          <Typography variant="h2" gutterBottom>Your Cart is Empty</Typography>
-          <Button variant="contained" onClick={() => navigate('/products')}>
-            Back to Products
-          </Button>
-        </ContentSection>
-      </PageContainer>
-    );
+  // Don't render cart UI if empty, but don't redirect if payment modal is open
+  if (cartItems.length === 0) {
+    return <PageContainer />; // Return empty container to maintain layout
   }
 
   return (
@@ -67,107 +72,93 @@ const CartCheckout: React.FC<CartCheckoutProps> = ({ products, onOpenPaymentModa
       <Typography variant="h2" gutterBottom>Review Your Cart</Typography>
 
       <ContentSection>
-        {cart.map((item: CartItem) => {
-          const product = products.find(p => p.id === item.productId);
-          if (!product) return null;
+        <GlassCard>
+          <section>
+            {cartItems.map((item: CartItem, index: number) => {
+              const product = products.find(p => p.id === item.id);
+              if (!product) return null;
 
-          const itemSubtotal = item.billingPeriod === BillingPeriod.Yearly
-            ? calculateYearlyPrice(product.price, item.licenseQuantity)
-            : product.price * item.licenseQuantity;
+              const itemSubtotal = item.price * item.quantity;
 
-          const billingOptions = [
-            {
-              value: BillingPeriod.Monthly,
-              label: getBillingPeriodLabel(product.price, BillingPeriod.Monthly)
-            },
-            {
-              value: BillingPeriod.Yearly,
-              label: getBillingPeriodLabel(product.price, BillingPeriod.Yearly)
-            }
-          ];
+              return (
+                <article key={item.id} style={{ marginBottom: index < cartItems.length - 1 ? '24px' : 0, paddingBottom: index < cartItems.length - 1 ? '24px' : 0, borderBottom: index < cartItems.length - 1 ? '1px solid rgba(0, 0, 0, 0.1)' : 'none' }}>
+                  <Typography variant="h3" gutterBottom>
+                    {item.name}
+                  </Typography>
+                  
+                  <FormGroup>
+                    <FlexBox gap={3} align="center">
+                      <InputWrapper style={{ width: '150px' }}>
+                        <Input
+                          id={`quantity-${item.id}`}
+                          label="Quantity"
+                          type="number"
+                          min={1}
+                          value={item.quantity.toString()}
+                          onChange={(value) => handleQuantityChange(item.id, parseInt(value) || 1)}
+                          fullWidth
+                        />
+                      </InputWrapper>
+                      <InputWrapper style={{ width: '200px' }}>
+                        <Select
+                          id={`billing-${item.id}`}
+                          label="Billing Period"
+                          value={item.billingPeriod}
+                          options={billingOptions}
+                          onChange={(value) => handleBillingPeriodChange(item.id, value)}
+                          fullWidth
+                        />
+                      </InputWrapper>
+                    </FlexBox>
+                  </FormGroup>
 
-          return (
-            <GlassCard key={product.id}>
-              <Link 
-                to={`/products/${product.slug}`}
-                style={{ 
-                  textDecoration: 'none',
-                  color: 'inherit'
-                }}
-              >
-                <Typography variant="h3" gutterBottom>
-                  {product.name}
+                  <FlexBox justify="space-between" align="center">
+                    <div>
+                      <Typography component="span">Subtotal:</Typography>
+                      <Typography component="span" style={{ fontWeight: 'bold', marginLeft: '12px' }}>
+                        ${formatPrice(itemSubtotal)}/{item.billingPeriod}
+                      </Typography>
+                    </div>
+                    <Button
+                      variant="contained"
+                      onClick={() => handleRemove(item.id)}
+                      color="error"
+                    >
+                      Remove
+                    </Button>
+                  </FlexBox>
+                </article>
+              );
+            })}
+          </section>
+
+          <footer style={{ marginTop: '32px', paddingTop: '24px', borderTop: '1px solid rgba(0, 0, 0, 0.1)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px' }}>
+              <Typography variant="h3">Total:</Typography>
+              <Typography variant="h3">
+                ${formatPrice(subtotal)}
+                <Typography component="span" variant="body2" style={{ color: 'rgba(0, 0, 0, 0.6)', marginLeft: '4px' }}>
+                  + tax
                 </Typography>
-              </Link>
-              
-              <FormGroup>
-                <FlexBox gap={3} align="center">
-                  <InputWrapper style={{ width: '150px' }}>
-                    <Input
-                      id={`quantity-${product.id}`}
-                      label="Licenses"
-                      type="number"
-                      min={1}
-                      value={item.licenseQuantity.toString()}
-                      onChange={(value) => handleQuantityChange(product.id, parseInt(value) || 1)}
-                      fullWidth
-                    />
-                  </InputWrapper>
+              </Typography>
+            </div>
 
-                  <InputWrapper style={{ flex: 1 }}>
-                    <Dropdown
-                      id={`billing-${product.id}`}
-                      label="Billing"
-                      value={item.billingPeriod}
-                      onChange={(value) => handleBillingPeriodChange(product.id, value as BillingPeriod)}
-                      options={billingOptions}
-                    />
-                  </InputWrapper>
-                </FlexBox>
-              </FormGroup>
-
-              <FlexBox justify="space-between" align="center">
-                <div>
-                  <Typography component="span">Subtotal: </Typography>
-                  <Typography component="span" style={{ fontWeight: 'bold' }}>
-                    ${formatPrice(itemSubtotal)}
-                  </Typography>
-                  <Typography 
-                    component="span" 
-                    color="text.secondary"
-                  >
-                    {' '}per {item.billingPeriod.toLowerCase()}
-                  </Typography>
-                </div>
-                <Button
-                  variant="outlined"
-                  onClick={() => handleRemove(product.id)}
-                  color="primary"
-                >
-                  Remove
-                </Button>
-              </FlexBox>
-            </GlassCard>
-          );
-        })}
-      </ContentSection>
-
-      <ContentSection>
-        <PriceSummary subtotal={total} hideSubtotalLabel />
-        <FlexBox justify="flex-end" gap={2} style={{ marginTop: 24 }}>
-          <Button
-            variant="outlined"
-            onClick={() => navigate('/products')}
-          >
-            Back to Products
-          </Button>
-          <Button
-            variant="contained"
-            onClick={onOpenPaymentModal}
-          >
-            Proceed to Payment
-          </Button>
-        </FlexBox>
+            <FlexBox justify="flex-end" gap={2}>
+              <Button
+                variant="contained"
+                onClick={onOpenPaymentModal}
+              >
+                Proceed to Payment
+              </Button>
+              <Button
+                variant="outlined"
+                onClick={() => navigate('/products')}
+              >
+                Back to Products
+              </Button>
+            </FlexBox>
+          </footer>
+        </GlassCard>
       </ContentSection>
     </PageContainer>
   );

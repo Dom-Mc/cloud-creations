@@ -14,5 +14,7 @@ export interface Product {
   price: number;
   features: string[];
   reviews: Review[];
-  category: 'photo' | 'video' | 'design' | 'web' | 'audio' | '3d';
-} 
+  category: string;
+}
+
+export default Product; 

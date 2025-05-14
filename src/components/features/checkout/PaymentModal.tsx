@@ -1,16 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { checkoutComplete, selectCart, selectTotal, CartItem } from '../../../store/cartSlice';
-import { formatPrice, calculateYearlyPrice, getBillingPeriodLabel, calculateTax } from '../../../utils/priceCalculations';
-import { ANNUAL_DISCOUNT_PERCENTAGE } from '../../../constants/pricing';
-import { BillingPeriod } from '../../../types/billing';
-import { generateReceiptDetails } from '../../../utils/receiptUtils';
-import PaymentSuccess from './PaymentSuccess';
-import PriceSummary from '../../shared/pricing/PriceSummary';
+import { useNavigate } from 'react-router-dom';
+import { selectCartItems, selectCartTotal, clearCart } from '../../../store/cartSlice';
+import { formatPrice, calculateTax } from '../../../utils/priceCalculations';
 import { Product } from '../../../types/product';
 import Modal from '../../ui/Modal';
 import Button from '../../ui/Button';
+import Input from '../../ui/Input';
 import Typography from '../../ui/Typography';
+
+interface CartItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+}
 
 interface PaymentModalProps {
   products: Product[];
@@ -18,11 +22,25 @@ interface PaymentModalProps {
   onClose: () => void;
 }
 
+interface PaymentFormData {
+  cardNumber: string;
+  expirationDate: string;
+  cvv: string;
+}
+
 const PaymentModal: React.FC<PaymentModalProps> = ({ products, isOpen, onClose }) => {
+  const navigate = useNavigate();
   const dispatch = useDispatch();
-  const cart = useSelector(selectCart);
-  const total = useSelector(selectTotal);
+  const cart = useSelector(selectCartItems);
+  const total = useSelector(selectCartTotal) as number;
   const [isSuccess, setIsSuccess] = useState(false);
+  const [formData, setFormData] = useState<PaymentFormData>({
+    cardNumber: '',
+    expirationDate: '',
+    cvv: ''
+  });
+  const [errors, setErrors] = useState<Partial<PaymentFormData>>({});
+  const [isProcessing, setIsProcessing] = useState(false);
   const [receiptDetails, setReceiptDetails] = useState<{ 
     id: string; 
     timestamp: string;
@@ -31,100 +49,280 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ products, isOpen, onClose }
     total: number;
   } | null>(null);
 
+  // Redirect to home if cart is empty and not in success state
+  useEffect(() => {
+    if (cart.length === 0 && !isSuccess && isOpen) {
+      navigate('/');
+      onClose();
+    }
+  }, [cart.length, isSuccess, navigate, onClose, isOpen]);
+
   const tax = calculateTax(total);
   const finalTotal = total + tax;
 
-  const handlePayment = () => {
-    const { id, timestamp } = generateReceiptDetails();
+  const validateForm = (): boolean => {
+    const newErrors: Partial<PaymentFormData> = {};
     
-    dispatch(checkoutComplete());
+    if (!formData.cardNumber.replace(/\s/g, '').match(/^\d{16}$/)) {
+      newErrors.cardNumber = 'Please enter a valid 16-digit card number';
+    }
+    
+    if (!formData.expirationDate.match(/^(0[1-9]|1[0-2])\/([0-9]{2})$/)) {
+      newErrors.expirationDate = 'Please enter a valid date (MM/YY)';
+    }
+    
+    if (!formData.cvv.match(/^\d{3,4}$/)) {
+      newErrors.cvv = 'Please enter a valid CVV';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const formatCardNumber = (value: string): string => {
+    const digits = value.replace(/\D/g, '');
+    const groups = digits.match(/.{1,4}/g) || [];
+    return groups.join(' ').substr(0, 19);
+  };
+
+  const formatExpirationDate = (value: string): string => {
+    const digits = value.replace(/\D/g, '');
+    if (digits.length >= 2) {
+      return `${digits.slice(0, 2)}/${digits.slice(2, 4)}`;
+    }
+    return digits;
+  };
+
+  const handleInputChange = (field: keyof PaymentFormData, value: string) => {
+    let formattedValue = value;
+    
+    if (field === 'cardNumber') {
+      formattedValue = formatCardNumber(value);
+    } else if (field === 'expirationDate') {
+      formattedValue = formatExpirationDate(value);
+    } else if (field === 'cvv') {
+      formattedValue = value.replace(/\D/g, '').substr(0, 4);
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      [field]: formattedValue
+    }));
+
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({
+        ...prev,
+        [field]: undefined
+      }));
+    }
+  };
+
+  const handlePayment = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsProcessing(true);
+
+    // Simulate payment processing
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    const receiptId = Math.random().toString(36).substring(2, 15);
+    const timestamp = new Date().toISOString();
+    
+    dispatch(clearCart());
     setReceiptDetails({ 
-      id,
+      id: receiptId,
       timestamp,
       subtotal: total,
       tax,
       total: finalTotal
     });
     setIsSuccess(true);
+    setIsProcessing(false);
   };
 
-  const content = isSuccess && receiptDetails ? (
-    <PaymentSuccess
-      receiptId={receiptDetails.id}
-      timestamp={receiptDetails.timestamp}
-      subtotal={receiptDetails.subtotal}
-      tax={receiptDetails.tax}
-      total={receiptDetails.total}
-    />
-  ) : (
-    <>
-      {cart.length === 0 ? (
-        <p>Your cart is empty</p>
-      ) : (
-        <>
-          <section aria-label="Cart items">
-            {cart.map((item: CartItem) => {
-              const product = products.find(p => p.id === item.productId);
-              if (!product) return null;
+  const handleClose = () => {
+    if (isSuccess) {
+      navigate('/');
+    }
+    onClose();
+  };
 
-              const price = item.billingPeriod === BillingPeriod.Yearly
-                ? calculateYearlyPrice(product.price, item.licenseQuantity)
-                : product.price * item.licenseQuantity;
+  const isFormComplete = (): boolean => {
+    return (
+      formData.cardNumber.replace(/\s/g, '').length === 16 &&
+      formData.expirationDate.length === 5 &&
+      formData.cvv.length >= 3
+    );
+  };
 
-              return (
-                <article key={product.id} style={{ marginBottom: '1rem', padding: '1rem', borderBottom: '1px solid #eee' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div>
-                      <h3 style={{ margin: '0 0 0.5rem 0' }}>{product.name}</h3>
-                      <p style={{ margin: '0 0 0.5rem 0' }}>Licenses: {item.licenseQuantity}</p>
-                      <p style={{ margin: '0 0 0.5rem 0' }}>{getBillingPeriodLabel(product.price, item.billingPeriod)}</p>
-                      {item.billingPeriod === BillingPeriod.Yearly && (
-                        <p aria-label="Yearly discount" style={{ margin: '0', color: '#4CAF50' }}>
-                          Includes {ANNUAL_DISCOUNT_PERCENTAGE}% yearly discount
-                        </p>
-                      )}
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <p style={{ margin: '0', fontWeight: 'bold' }}>
-                        ${formatPrice(price)}
-                      </p>
-                      <p style={{ margin: '0', fontSize: '0.9em', color: '#666' }}>
-                        per {item.billingPeriod.toLowerCase()}
-                      </p>
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
-          </section>
+  // Don't render anything if cart is empty and not in success state
+  if (cart.length === 0 && !isSuccess) {
+    return null;
+  }
 
-          <footer style={{ marginTop: '1rem' }}>
-            <PriceSummary subtotal={total} showTax tax={tax} />
-          </footer>
-        </>
-      )}
-    </>
-  );
+  let modalContent;
+  if (isSuccess && receiptDetails) {
+    modalContent = (
+      <div style={{ textAlign: 'center', padding: '8px 0 24px' }}>
+        <div style={{ marginBottom: '24px' }}>
+          <Typography 
+            variant="h3" 
+            style={{ 
+              color: '#4CAF50',
+              marginBottom: '8px'
+            }}
+          >
+            Payment Successful!
+          </Typography>
+          <Typography variant="body1" style={{ color: 'rgba(0, 0, 0, 0.6)' }}>
+            Thank you for your purchase
+          </Typography>
+        </div>
 
-  const actions = !isSuccess && cart.length > 0 ? (
-    <>
-      <Button onClick={onClose}>
-        Cancel
-      </Button>
-      <Button onClick={handlePayment} variant="contained" color="primary">
-        Complete Payment
-      </Button>
-    </>
-  ) : undefined;
+        <div style={{ 
+          background: 'rgba(0, 0, 0, 0.03)', 
+          padding: '24px', 
+          borderRadius: '8px',
+          marginBottom: '24px'
+        }}>
+          <Typography variant="body1" style={{ marginBottom: '8px' }}>
+            Receipt ID: <span style={{ fontFamily: 'monospace' }}>{receiptDetails.id}</span>
+          </Typography>
+          <Typography variant="body1" style={{ marginBottom: '24px' }}>
+            Date: {new Date(receiptDetails.timestamp).toLocaleString()}
+          </Typography>
+
+          <div style={{ 
+            borderTop: '1px solid rgba(0, 0, 0, 0.1)',
+            paddingTop: '16px'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <Typography variant="body1">Subtotal:</Typography>
+              <Typography variant="body1">${formatPrice(receiptDetails.subtotal)}</Typography>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <Typography variant="body1">Tax:</Typography>
+              <Typography variant="body1">${formatPrice(receiptDetails.tax)}</Typography>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <Typography variant="h3">Total:</Typography>
+              <Typography variant="h3">${formatPrice(receiptDetails.total)}</Typography>
+            </div>
+          </div>
+        </div>
+
+        <Button 
+          variant="contained" 
+          onClick={handleClose}
+          style={{ minWidth: '200px' }}
+        >
+          Return to Home
+        </Button>
+      </div>
+    );
+  } else if (cart.length > 0) {
+    modalContent = (
+      <>
+        <section style={{ marginBottom: '32px' }}>
+          {cart.map((item: CartItem) => (
+            <article key={item.id} style={{ marginBottom: '24px', paddingBottom: '24px', borderBottom: '1px solid rgba(0, 0, 0, 0.1)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <Typography variant="h3">{item.name}</Typography>
+                  <Typography variant="body1" style={{ color: 'rgba(0, 0, 0, 0.6)', display: 'inline' }}>
+                    Quantity: {item.quantity}
+                  </Typography>
+                </div>
+                <Typography variant="h3">
+                  ${formatPrice(item.price * item.quantity)}
+                </Typography>
+              </div>
+            </article>
+          ))}
+        </section>
+
+        <section style={{ marginBottom: '32px' }}>
+          <Typography variant="h3" style={{ marginBottom: '16px' }}>Payment Details</Typography>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <Input
+              id="card-number"
+              label="Card Number"
+              value={formData.cardNumber}
+              onChange={(value) => handleInputChange('cardNumber', value)}
+              error={!!errors.cardNumber}
+              helperText={errors.cardNumber}
+              placeholder="1234 5678 9012 3456"
+              fullWidth
+            />
+            <div style={{ display: 'flex', gap: '16px' }}>
+              <Input
+                id="expiration-date"
+                label="Expiration Date"
+                value={formData.expirationDate}
+                onChange={(value) => handleInputChange('expirationDate', value)}
+                error={!!errors.expirationDate}
+                helperText={errors.expirationDate}
+                placeholder="MM/YY"
+                style={{ width: '120px' }}
+              />
+              <Input
+                id="cvv"
+                label="CVV"
+                value={formData.cvv}
+                onChange={(value) => handleInputChange('cvv', value)}
+                error={!!errors.cvv}
+                helperText={errors.cvv}
+                type="password"
+                placeholder="123"
+                style={{ width: '100px' }}
+              />
+            </div>
+          </div>
+        </section>
+
+        <footer>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <Typography variant="body1">Subtotal:</Typography>
+            <Typography variant="body1" style={{ textAlign: 'right' }}>${formatPrice(total)}</Typography>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <Typography variant="body1">Tax:</Typography>
+            <Typography variant="body1" style={{ textAlign: 'right' }}>${formatPrice(tax)}</Typography>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px' }}>
+            <Typography variant="h3">Total:</Typography>
+            <Typography variant="h3" style={{ textAlign: 'right' }}>${formatPrice(finalTotal)}</Typography>
+          </div>
+        </footer>
+      </>
+    );
+  } else {
+    modalContent = null;
+  }
 
   return (
     <Modal
       open={isOpen}
-      onClose={onClose}
-      title={isSuccess ? "Payment Successful" : "Complete Payment"}
-      actions={actions}
+      onClose={handleClose}
+      title={isSuccess ? "Order Confirmation" : "Complete Payment"}
+      actions={!isSuccess && cart.length > 0 ? (
+        <>
+          <Button onClick={handleClose} variant="outlined">Cancel</Button>
+          <Button 
+            onClick={handlePayment} 
+            variant="contained" 
+            color="primary"
+            disabled={isProcessing || !isFormComplete()}
+          >
+            {isProcessing ? 'Processing...' : 'Complete Payment'}
+          </Button>
+        </>
+      ) : undefined}
     >
-      {content}
+      {modalContent}
     </Modal>
   );
 };

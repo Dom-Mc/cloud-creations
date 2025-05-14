@@ -1,56 +1,34 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { selectCartItemsMap } from '../../../store/cartSlice';
+import { selectCartItems } from '../../../store/cartSlice';
 import { selectProducts } from '../../../store/productsSlice';
-import Card from '../../ui/Card';
+import { Product } from '../../../types/product';
+import { CartItem } from '../../../types/cart';
 import Typography from '../../ui/Typography';
-import styled from 'styled-components';
-
-const ProductGrid = styled.section`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 24px;
-  padding: 24px 0;
-`;
-
-const ProductStatus = styled.aside`
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  background: ${({ theme }) => theme.palette.primary.main};
-  color: ${({ theme }) => theme.palette.primary.contrastText};
-  padding: 4px 12px;
-  border-radius: 16px;
-  font-size: 0.875rem;
-`;
-
-const ProductLink = styled(Link)`
-  text-decoration: none;
-  color: inherit;
-  display: block;
-  height: 100%;
-  cursor: pointer;
-`;
-
-const Price = styled(Typography)`
-  color: ${({ theme }) => theme.palette.primary.main};
-  font-weight: 600;
-  margin-top: 8px;
-`;
+import {
+  ProductGrid,
+  ProductLink,
+  ProductCard,
+  Description,
+  Price,
+  ProductStatus,
+  Features,
+  FeatureList
+} from './ProductList.styles';
 
 const ProductList: React.FC = () => {
-  const cartItemsMap = useSelector(selectCartItemsMap);
+  const cartItems = useSelector(selectCartItems);
   const products = useSelector(selectProducts);
 
   return (
-    <ProductGrid aria-label="Product table">
-      {products.map(product => {
-        const isInCart = Boolean(cartItemsMap[product.id]);
+    <ProductGrid>
+      {products.map((product: Product) => {
+        const isInCart = cartItems.some((item: CartItem) => item.id === product.id);
         
         return (
           <ProductLink key={product.id} to={`/products/${product.slug}`}>
-            <Card $interactive>
+            <ProductCard $interactive>
               {isInCart && (
                 <ProductStatus aria-label="Product status">
                   In Cart
@@ -61,17 +39,28 @@ const ProductList: React.FC = () => {
                 <Typography variant="h3" gutterBottom>
                   {product.name}
                 </Typography>
-                <Price variant="subtitle1" aria-label="Monthly price">
+                <Price>
                   ${product.price}/month
                 </Price>
               </header>
 
               <section>
-                <Typography>
+                <Description variant="body1">
                   {product.description}
-                </Typography>
+                </Description>
+
+                <Features>
+                  <Typography variant="subtitle2" gutterBottom style={{ color: '#000', marginBottom: '1rem' }}>
+                    Key Features
+                  </Typography>
+                  <FeatureList>
+                    {product.features.slice(0, 3).map((feature, index) => (
+                      <li key={index}>{feature}</li>
+                    ))}
+                  </FeatureList>
+                </Features>
               </section>
-            </Card>
+            </ProductCard>
           </ProductLink>
         );
       })}

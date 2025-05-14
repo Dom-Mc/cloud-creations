@@ -1,101 +1,131 @@
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { addToCart, selectCart } from '../../../../store/cartSlice';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import { addToCart, selectCartItems } from '../../../../store/cartSlice';
 import { Product } from '../../../../types/product';
 import { BillingPeriod } from '../../../../types/billing';
-import { calculateYearlyPrice, formatPrice, getBillingPeriodLabel } from '../../../../utils/priceCalculations';
-import Dropdown from '../../../ui/Dropdown';
+import { formatPrice, calculateYearlyPrice } from '../../../../utils/priceCalculations';
+import { ANNUAL_DISCOUNT_PERCENTAGE } from '../../../../constants/pricing';
 import Input from '../../../ui/Input';
 import Button from '../../../ui/Button';
+import Typography from '../../../ui/Typography';
+import {
+  PlanContainer,
+  PlanOptions,
+  PlanCard,
+  QuantitySection,
+  TotalSection,
+  ActionSection
+} from './ProductPlan.styles';
 
-interface ProductPlanProps {
-  product: Product;
-}
-
-const ProductPlan: React.FC<ProductPlanProps> = ({ product }) => {
+const ProductPlan: React.FC<{ product: Product }> = ({ product }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const cart = useSelector(selectCart);
-  const [licenseQuantity, setLicenseQuantity] = useState(1);
-  const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>(BillingPeriod.Monthly);
+  const cartItems = useSelector(selectCartItems);
+  const [quantity, setQuantity] = useState(1);
+  const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>(BillingPeriod.Month);
   const [isAdded, setIsAdded] = useState(false);
 
-  const isInCart = cart.some(item => item.productId === product.id);
+  const isInCart = cartItems.some(item => item.id === product.id);
+  const yearlyPrice = calculateYearlyPrice(product.price, 1);
+  const monthlyEquivalent = yearlyPrice / 12;
+  const currentPrice = billingPeriod === BillingPeriod.Year ? yearlyPrice : product.price;
+  const total = currentPrice * quantity;
 
   const handleAddToCart = () => {
     dispatch(addToCart({
-      productId: product.id,
-      licenseQuantity,
+      id: product.id,
+      name: product.name,
+      price: currentPrice,
+      quantity,
       billingPeriod
     }));
     setIsAdded(true);
   };
 
-  const price = billingPeriod === BillingPeriod.Yearly
-    ? calculateYearlyPrice(product.price, licenseQuantity)
-    : product.price * licenseQuantity;
-
-  const billingOptions = [
-    {
-      value: BillingPeriod.Monthly,
-      label: getBillingPeriodLabel(product.price, BillingPeriod.Monthly)
-    },
-    {
-      value: BillingPeriod.Yearly,
-      label: getBillingPeriodLabel(product.price, BillingPeriod.Yearly)
-    }
-  ];
-
   if (isAdded || isInCart) {
     return (
-      <section>
-        <div>
-          <p>✓ {product.name} has been added to your cart!</p>
-          <div>
-            <Button variant="contained" onClick={() => navigate('/checkout')}>
-              Go to Checkout
-            </Button>
-          </div>
-        </div>
-      </section>
+      <PlanContainer style={{ textAlign: 'center' }}>
+        <Typography variant="h3" color="success" style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', marginBottom: '24px' }}>
+          <ShoppingCartIcon /> {product.name} has been added to your cart!
+        </Typography>
+        <ActionSection style={{ justifyContent: 'center' }}>
+          <Button 
+            variant="contained"
+            onClick={() => navigate('/checkout')}
+          >
+            Go to Checkout
+          </Button>
+          <Button 
+            variant="outlined"
+            onClick={() => navigate('/products')}
+          >
+            Back to Products
+          </Button>
+        </ActionSection>
+      </PlanContainer>
     );
   }
 
   return (
-    <section>
-      <div>
+    <PlanContainer>
+      <Typography variant="h3" component="div" gutterBottom>Select Your Plan</Typography>
+      <PlanOptions>
+        <PlanCard 
+          type="button"
+          $isSelected={billingPeriod === BillingPeriod.Month}
+          onClick={() => setBillingPeriod(BillingPeriod.Month)}
+        >
+          <div className="period">Monthly</div>
+          <div className="price">${formatPrice(product.price)}/mo</div>
+        </PlanCard>
+
+        <PlanCard 
+          type="button"
+          $isSelected={billingPeriod === BillingPeriod.Year}
+          onClick={() => setBillingPeriod(BillingPeriod.Year)}
+        >
+          <div className="period">Yearly</div>
+          <div className="price">${formatPrice(yearlyPrice)}/yr</div>
+          <div className="save">Save {ANNUAL_DISCOUNT_PERCENTAGE}%</div>
+        </PlanCard>
+      </PlanOptions>
+
+      <QuantitySection>
         <Input
-          id="license-quantity"
-          label="Number of Licenses"
+          id="quantity"
+          label="Quantity"
           type="number"
           min={1}
-          value={licenseQuantity.toString()}
-          onChange={(value) => setLicenseQuantity(parseInt(value) || 1)}
+          value={quantity.toString()}
+          onChange={(value) => setQuantity(parseInt(value) || 1)}
+          fullWidth
         />
-      </div>
+      </QuantitySection>
 
-      <div>
-        <Dropdown
-          id="billing-period"
-          label="Billing Period"
-          value={billingPeriod}
-          onChange={(value) => setBillingPeriod(value as BillingPeriod)}
-          options={billingOptions}
-        />
-      </div>
-
-      <div>
-        <p>Total: ${formatPrice(price)}/{billingPeriod}</p>
-        <Button 
-          variant="contained"
-          onClick={handleAddToCart}
-          color="primary"
-        >
-          Add to Cart
-        </Button>
-      </div>
-    </section>
+      <TotalSection>
+        <Typography variant="h3">
+          Total: ${formatPrice(total)}/{billingPeriod}
+        </Typography>
+        <ActionSection>
+          <Button 
+            variant="contained"
+            onClick={handleAddToCart}
+            color="primary"
+            size="large"
+          >
+            Add to Cart
+          </Button>
+          <Button 
+            variant="outlined"
+            onClick={() => navigate('/products')}
+          >
+            Back to Products
+          </Button>
+        </ActionSection>
+      </TotalSection>
+    </PlanContainer>
   );
 };
 

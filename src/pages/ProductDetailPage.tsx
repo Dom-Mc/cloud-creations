@@ -1,29 +1,27 @@
 import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { RootState } from '../store/store';
+import styled from 'styled-components';
+import { selectProductBySlug } from '../store/productsSlice';
 import ProductDetail from '../components/features/products/product-detail/ProductDetail';
-import Button from '../components/ui/Button';
+
+const DetailContainer = styled.div`
+  padding-bottom: 40px;
+  min-height: calc(100vh - 80px);
+  display: flex;
+  flex-direction: column;
+`;
 
 const ProductDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
-  const navigate = useNavigate();
-  
-  const product = useSelector((state: RootState) => 
-    state.products.products.find(p => p.slug === slug)
-  );
+  const product = useSelector(selectProductBySlug(slug || ''));
 
-  if (!product) return <main>Product not found</main>;
+  if (!product) return <DetailContainer>Product not found</DetailContainer>;
 
   return (
-    <main>
+    <DetailContainer>
       <ProductDetail product={product} />
-      <nav>
-        <Button variant="outlined" onClick={() => navigate('/products')}>
-          Back to Products
-        </Button>
-      </nav>
-    </main>
+    </DetailContainer>
   );
 };
 

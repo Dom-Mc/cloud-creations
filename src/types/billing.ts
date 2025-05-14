@@ -1,4 +1,4 @@
 export enum BillingPeriod {
-  Monthly = 'month',
-  Yearly = 'year'
+  Month = 'month',
+  Year = 'year'
 } 

@@ -1,23 +1,27 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import CartNavItem from './CartNavItem';
+import {
+  Nav,
+  Logo,
+  RightSection,
+  NavLinks
+} from './styles';
 
 const Navigation: React.FC = () => {
   return (
     <header role="banner">
-      <nav aria-label="Main navigation">
-        <ul>
-          <li>
-            <Link to="/">Cloud Creation</Link>
-          </li>
-          <li>
+      <Nav aria-label="Main navigation">
+        <Logo to="/">
+          Cloud Creations
+        </Logo>
+        <RightSection>
+          <NavLinks>
             <Link to="/products">Products</Link>
-          </li>
-          <li>
             <CartNavItem />
-          </li>
-        </ul>
-      </nav>
+          </NavLinks>
+        </RightSection>
+      </Nav>
     </header>
   );
 };

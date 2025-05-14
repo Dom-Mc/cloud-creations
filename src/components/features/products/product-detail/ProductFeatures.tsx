@@ -1,35 +1,25 @@
 import React from 'react';
-import CheckIcon from '@mui/icons-material/Check';
 import Typography from '../../../ui/Typography';
 import styled from 'styled-components';
 
-const FeaturesGrid = styled.ul`
+const FeaturesGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 16px;
-  list-style: none;
-  padding: 0;
-  margin: 24px 0;
-`;
-
-const FeatureItem = styled.li`
-  display: flex;
-  align-items: flex-start;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 12px;
-  padding: 8px;
-  
-  svg {
-    color: ${({ theme }) => theme.palette.primary.main};
-    font-size: 1.25rem;
-    flex-shrink: 0;
-    margin-top: 4px;
-    font-weight: 700;
-    stroke-width: 2;
-  }
+  margin-top: 16px;
 `;
 
-const FeatureText = styled(Typography)`
-  font-weight: 500;
+const FeatureItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+
+  &::before {
+    content: '✓';
+    color: ${({ theme }) => theme.palette.success.main};
+    font-weight: bold;
+  }
 `;
 
 interface ProductFeaturesProps {
@@ -38,17 +28,16 @@ interface ProductFeaturesProps {
 
 const ProductFeatures: React.FC<ProductFeaturesProps> = ({ features }) => {
   return (
-    <section>
+    <div>
       <Typography variant="h3" gutterBottom>Features</Typography>
       <FeaturesGrid>
         {features.map((feature, index) => (
           <FeatureItem key={index}>
-            <CheckIcon />
-            <FeatureText>{feature}</FeatureText>
+            {feature}
           </FeatureItem>
         ))}
       </FeaturesGrid>
-    </section>
+    </div>
   );
 };
 

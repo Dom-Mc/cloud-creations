@@ -76,7 +76,7 @@ describe('priceCalculations', () => {
   describe('getBillingPeriodLabel', () => {
     it('includes correct price in monthly label', () => {
       const price = 100;
-      const label = getBillingPeriodLabel(price, BillingPeriod.Monthly);
+      const label = getBillingPeriodLabel(price, BillingPeriod.Month);
       
       expect(label).toContain('$100.00');
       expect(label).toContain('/month');
@@ -86,7 +86,7 @@ describe('priceCalculations', () => {
     it('includes correct price and discount in yearly label', () => {
       const price = 100;
       const yearlyPrice = calculateYearlyPrice(price, 1);
-      const label = getBillingPeriodLabel(price, BillingPeriod.Yearly);
+      const label = getBillingPeriodLabel(price, BillingPeriod.Year);
       
       expect(label).toContain(`$${yearlyPrice.toFixed(2)}`);
       expect(label).toContain('/yr');
@@ -96,7 +96,7 @@ describe('priceCalculations', () => {
 
     it('includes correct decimal price in label', () => {
       const price = 99.99;
-      const label = getBillingPeriodLabel(price, BillingPeriod.Monthly);
+      const label = getBillingPeriodLabel(price, BillingPeriod.Month);
       
       expect(label).toContain('$99.99');
       expect(label).toContain('/month');

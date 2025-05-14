@@ -17,7 +17,7 @@ export const calculateTax = (subtotal: number): number => {
 };
 
 export const getBillingPeriodLabel = (price: number, billingPeriod: BillingPeriod): string => {
-  if (billingPeriod === BillingPeriod.Yearly) {
+  if (billingPeriod === BillingPeriod.Year) {
     const yearlyPrice = calculateYearlyPrice(price, 1);
     return `Per ${billingPeriod} ($${formatPrice(yearlyPrice)}/yr per license) - Save ${ANNUAL_DISCOUNT_PERCENTAGE}%`;
   }

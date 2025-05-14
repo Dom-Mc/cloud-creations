@@ -2,8 +2,12 @@ import React from 'react';
 import { Product } from '../../../../types/product';
 import ProductPlan from './ProductPlan';
 import ProductFeatures from './ProductFeatures';
-import Card from '../../../ui/Card';
 import Typography from '../../../ui/Typography';
+import {
+  DetailCard,
+  DetailHeader,
+  DetailSection
+} from './ProductDetail.styles';
 
 interface ProductDetailProps {
   product: Product;
@@ -11,17 +15,17 @@ interface ProductDetailProps {
 
 const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
   return (
-    <Card>
-      <header>
+    <DetailCard>
+      <DetailHeader>
         <Typography variant="h2" gutterBottom>{product.name}</Typography>
-      </header>
+      </DetailHeader>
       
-      <section>
+      <DetailSection>
         <Typography gutterBottom>{product.description}</Typography>
         <ProductFeatures features={product.features} />
         <ProductPlan product={product} />
-      </section>
-    </Card>
+      </DetailSection>
+    </DetailCard>
   );
 };
 
