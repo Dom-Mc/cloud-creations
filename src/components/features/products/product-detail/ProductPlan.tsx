@@ -29,7 +29,6 @@ const ProductPlan: React.FC<{ product: Product }> = ({ product }) => {
 
   const isInCart = cartItems.some(item => item.id === product.id);
   const yearlyPrice = calculateYearlyPrice(product.price, 1);
-  const monthlyEquivalent = yearlyPrice / 12;
   const currentPrice = billingPeriod === BillingPeriod.Year ? yearlyPrice : product.price;
   const total = currentPrice * quantity;
 
@@ -95,7 +94,7 @@ const ProductPlan: React.FC<{ product: Product }> = ({ product }) => {
       <QuantitySection>
         <Input
           id="quantity"
-          label="Quantity"
+          label="Licenses"
           type="number"
           min={1}
           value={quantity.toString()}

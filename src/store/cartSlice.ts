@@ -2,6 +2,8 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { RootState } from './store';
 import { CartItem } from '../types/cart';
 import { BillingPeriod } from '../types/billing';
+import { ANNUAL_DISCOUNT_PERCENTAGE } from '../constants/pricing';
+import { calculateYearlyPrice } from '../utils/priceCalculations';
 
 interface CartState {
   items: CartItem[];
@@ -20,7 +22,8 @@ const cartSlice = createSlice({
       if (existingItem) {
         existingItem.quantity += 1;
       } else {
-        state.items.push({ ...action.payload, quantity: 1 });
+        // state.items.push({ ...action.payload, quantity: 1 });
+        state.items.push({ ...action.payload});
       }
     },
     removeFromCart: (state, action: PayloadAction<string>) => {
@@ -35,10 +38,18 @@ const cartSlice = createSlice({
     updateBillingPeriod: (state, action: PayloadAction<{ id: string; billingPeriod: BillingPeriod }>) => {
       const item = state.items.find(item => item.id === action.payload.id);
       if (item) {
+        const oldBillingPeriod = item.billingPeriod;
         item.billingPeriod = action.payload.billingPeriod;
-        // Update price based on billing period
-        const basePrice = item.price / (item.billingPeriod === 'year' ? 10 : 1);
-        item.price = action.payload.billingPeriod === 'year' ? basePrice * 10 : basePrice;
+        
+        // First convert current price back to monthly if it's yearly
+        const monthlyPrice = oldBillingPeriod === 'year' 
+          ? item.price / (12 * (1 - ANNUAL_DISCOUNT_PERCENTAGE / 100))
+          : item.price;
+        
+        // Then calculate new price based on new billing period
+        item.price = action.payload.billingPeriod === 'year'
+          ? calculateYearlyPrice(monthlyPrice, 1)  // Store the full yearly price
+          : monthlyPrice;
       }
     },
     clearCart: (state) => {

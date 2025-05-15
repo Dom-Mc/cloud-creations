@@ -1,5 +1,4 @@
 import React from 'react';
-import { Select as MuiSelect, FormControl, InputLabel } from '@mui/material';
 import { SelectContainer, StyledLabel, StyledSelect, StyledMenuItem } from './Select.styles';
 
 interface SelectOption {
@@ -26,14 +25,20 @@ const Select: React.FC<SelectProps> = ({
   fullWidth = false,
   error = false
 }) => {
+  const handleChange = (event: any) => {
+    onChange(event.target.value);
+  };
+
   return (
     <SelectContainer $fullWidth={fullWidth}>
-      {label && <StyledLabel>{label}</StyledLabel>}
+      {label && <StyledLabel htmlFor={id}>{label}</StyledLabel>}
       <StyledSelect
         id={id}
         value={value}
         error={error}
-        onChange={(e) => onChange(e.target.value as string)}
+        onChange={handleChange}
+        displayEmpty
+        variant="outlined"
         MenuProps={{
           PaperProps: {
             sx: {

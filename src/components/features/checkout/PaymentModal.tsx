@@ -203,7 +203,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ products, isOpen, onClose }
                 <div>
                   <Typography variant="h3">{item.name}</Typography>
                   <Typography variant="body1" style={{ color: 'rgba(0, 0, 0, 0.6)', display: 'inline' }}>
-                    Quantity: {item.quantity}
+                    Licenses: {item.quantity}
                   </Typography>
                 </div>
                 <Typography variant="h3">

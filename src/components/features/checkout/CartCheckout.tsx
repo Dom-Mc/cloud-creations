@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { 
@@ -17,14 +17,19 @@ import Input from '../../ui/Input';
 import Select from '../../ui/Select';
 import Button from '../../ui/Button';
 import Typography from '../../ui/Typography';
+import EmptyCart from './EmptyCart';
 import {
   PageContainer,
   ContentSection,
-  GlassCard,
+  CartItemCard,
+  CartItemArticle,
+  CartFooter,
+  TotalSection,
+  TaxText,
   FlexBox,
   InputWrapper,
-  FormGroup,
-} from '../../styled';
+  FormGroup
+} from './CartCheckout.styles';
 
 interface CartCheckoutProps {
   products: Product[];
@@ -42,14 +47,6 @@ const CartCheckout: React.FC<CartCheckoutProps> = ({ products, onOpenPaymentModa
   const cartItems = useSelector(selectCartItems);
   const subtotal = useSelector(selectCartTotal);
 
-  // Only navigate away if we're not in the payment flow
-  useEffect(() => {
-    const isPaymentModalOpen = document.querySelector('[role="dialog"]');
-    if (cartItems.length === 0 && !isPaymentModalOpen) {
-      navigate('/products');
-    }
-  }, [cartItems.length, navigate]);
-
   const handleRemove = (id: string) => {
     dispatch(removeFromCart(id));
   };
@@ -62,9 +59,13 @@ const CartCheckout: React.FC<CartCheckoutProps> = ({ products, onOpenPaymentModa
     dispatch(updateBillingPeriod({ id, billingPeriod: value as BillingPeriod }));
   };
 
-  // Don't render cart UI if empty, but don't redirect if payment modal is open
+  // Show empty cart state if no items
   if (cartItems.length === 0) {
-    return <PageContainer />; // Return empty container to maintain layout
+    return (
+      <PageContainer>
+        <EmptyCart />
+      </PageContainer>
+    );
   }
 
   return (
@@ -72,26 +73,27 @@ const CartCheckout: React.FC<CartCheckoutProps> = ({ products, onOpenPaymentModa
       <Typography variant="h2" gutterBottom>Review Your Cart</Typography>
 
       <ContentSection>
-        <GlassCard>
+        <CartItemCard>
           <section>
             {cartItems.map((item: CartItem, index: number) => {
               const product = products.find(p => p.id === item.id);
               if (!product) return null;
 
               const itemSubtotal = item.price * item.quantity;
+              const isLast = index === cartItems.length - 1;
 
               return (
-                <article key={item.id} style={{ marginBottom: index < cartItems.length - 1 ? '24px' : 0, paddingBottom: index < cartItems.length - 1 ? '24px' : 0, borderBottom: index < cartItems.length - 1 ? '1px solid rgba(0, 0, 0, 0.1)' : 'none' }}>
+                <CartItemArticle key={item.id} isLast={isLast}>
                   <Typography variant="h3" gutterBottom>
                     {item.name}
                   </Typography>
                   
                   <FormGroup>
                     <FlexBox gap={3} align="center">
-                      <InputWrapper style={{ width: '150px' }}>
+                      <InputWrapper width="150px">
                         <Input
                           id={`quantity-${item.id}`}
-                          label="Quantity"
+                          label="Licenses"
                           type="number"
                           min={1}
                           value={item.quantity.toString()}
@@ -99,7 +101,7 @@ const CartCheckout: React.FC<CartCheckoutProps> = ({ products, onOpenPaymentModa
                           fullWidth
                         />
                       </InputWrapper>
-                      <InputWrapper style={{ width: '200px' }}>
+                      <InputWrapper width="200px">
                         <Select
                           id={`billing-${item.id}`}
                           label="Billing Period"
@@ -127,21 +129,19 @@ const CartCheckout: React.FC<CartCheckoutProps> = ({ products, onOpenPaymentModa
                       Remove
                     </Button>
                   </FlexBox>
-                </article>
+                </CartItemArticle>
               );
             })}
           </section>
 
-          <footer style={{ marginTop: '32px', paddingTop: '24px', borderTop: '1px solid rgba(0, 0, 0, 0.1)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px' }}>
+          <CartFooter>
+            <TotalSection>
               <Typography variant="h3">Total:</Typography>
               <Typography variant="h3">
                 ${formatPrice(subtotal)}
-                <Typography component="span" variant="body2" style={{ color: 'rgba(0, 0, 0, 0.6)', marginLeft: '4px' }}>
-                  + tax
-                </Typography>
+                <TaxText variant="body2">+ tax</TaxText>
               </Typography>
-            </div>
+            </TotalSection>
 
             <FlexBox justify="flex-end" gap={2}>
               <Button
@@ -157,8 +157,8 @@ const CartCheckout: React.FC<CartCheckoutProps> = ({ products, onOpenPaymentModa
                 Back to Products
               </Button>
             </FlexBox>
-          </footer>
-        </GlassCard>
+          </CartFooter>
+        </CartItemCard>
       </ContentSection>
     </PageContainer>
   );

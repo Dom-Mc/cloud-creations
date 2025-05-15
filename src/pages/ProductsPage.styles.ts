@@ -9,13 +9,11 @@ export const PageContainer = styled.div`
 
 export const Header = styled.header`
   text-align: center;
-  margin-bottom: 3rem;
+  margin-bottom: 2rem;
 `;
 
 export const Subtitle = styled(Typography)`
   color: #666;
-  max-width: 600px;
-  margin: 1rem auto 0;
 `;
 
 export const TestimonialsSection = styled.section`
